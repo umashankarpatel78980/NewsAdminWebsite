@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
@@ -8,12 +8,26 @@ import CommunityManagement from './pages/CommunityManagement';
 import ReporterEvents from './pages/ReporterEvents';
 import ActivityManagement from './pages/ActivityManagement';
 import Reports from './pages/Reports';
+import LoginPage from './pages/LoginPage';
+
+// Simple Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+};
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<DashboardLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+
+        <Route path="/" element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<Dashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="reporters" element={<ReporterManagement />} />

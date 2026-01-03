@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -26,6 +27,16 @@ const navItems = [
 ];
 
 export default function Sidebar({ isOpen, className }) {
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('isAdminAuthenticated');
+            localStorage.removeItem('adminUser');
+            navigate('/login');
+        }
+    };
+
     return (
         <aside className={clsx('sidebar', { 'sidebar-closed': !isOpen }, className)}>
             <div className="sidebar-header">
@@ -49,7 +60,7 @@ export default function Sidebar({ isOpen, className }) {
             </nav>
 
             <div className="sidebar-footer">
-                <button className="nav-item logout-btn">
+                <button className="nav-item logout-btn" onClick={handleLogout}>
                     <LogOut size={20} />
                     <span className="nav-label">Logout</span>
                 </button>
