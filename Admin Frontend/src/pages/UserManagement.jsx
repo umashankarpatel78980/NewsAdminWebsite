@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Shield, Ban, Trash2, Plus, Upload, MapPin, Briefcase, GraduationCap } from 'lucide-react';
+import { Search, Filter, Shield, Ban, Trash2, Plus, Upload, MapPin, Briefcase, GraduationCap, Download } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -112,7 +112,10 @@ export default function UserManagement() {
                         <Plus size={18} style={{ marginRight: '8px' }} />
                         Add User
                     </Button>
-                    <Button variant="secondary" onClick={handleExport}>Export Users</Button>
+                    <Button variant="secondary" onClick={handleExport}>
+                        <Download size={18} style={{ marginRight: '8px' }} />
+                        Export Users
+                    </Button>
                 </div>
             </div>
 
