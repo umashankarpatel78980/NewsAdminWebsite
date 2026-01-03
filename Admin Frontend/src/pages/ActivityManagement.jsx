@@ -22,14 +22,10 @@ export default function ActivityManagement() {
     const [selectedActivity, setSelectedActivity] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Filter Logic
     const filteredActivities = activities.filter(item => {
         const matchesSearch = item.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.action.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filterType === 'All' ||
-            (filterType === 'Success' && item.status === 'Success') ||
-            (filterType === 'Failed' && item.status === 'Failed') ||
-            (filterType === 'Info' && item.status === 'Info');
+        const matchesFilter = filterType === 'All' || item.status === filterType;
         return matchesSearch && matchesFilter;
     });
 
@@ -81,9 +77,8 @@ export default function ActivityManagement() {
                 </Button>
             </div>
 
-            {/* Filters */}
-            <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <div className="search-bar" style={{ flex: 1, maxWidth: '400px', backgroundColor: 'white' }}>
+            <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div className="search-bar" style={{ flex: 1, minWidth: '250px', backgroundColor: 'white' }}>
                     <Search size={18} className="search-icon" />
                     <input
                         type="text"
@@ -100,14 +95,23 @@ export default function ActivityManagement() {
                     </Button>
 
                     {isFilterOpen && (
-                        <div className="glass-panel" style={{
+                        <div className="glass-panel dropdown-menu" style={{
                             position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-                            padding: '0.5rem', minWidth: '150px', zIndex: 10, background: 'white'
+                            padding: '0.5rem', minWidth: '160px', zIndex: 10, background: 'white',
+                            borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                         }}>
                             {['All', 'Success', 'Failed', 'Info'].map(type => (
                                 <div
                                     key={type}
-                                    style={{ padding: '8px 12px', cursor: 'pointer', borderRadius: '4px', background: filterType === type ? '#f1f5f9' : 'transparent' }}
+                                    style={{
+                                        padding: '10px 12px',
+                                        cursor: 'pointer',
+                                        borderRadius: '6px',
+                                        background: filterType === type ? '#f1f5f9' : 'transparent',
+                                        color: filterType === type ? '#1e293b' : '#64748b',
+                                        fontWeight: filterType === type ? '600' : '400',
+                                        transition: 'background 0.2s'
+                                    }}
                                     onClick={() => { setFilterType(type); setIsFilterOpen(false); }}
                                 >
                                     {type}

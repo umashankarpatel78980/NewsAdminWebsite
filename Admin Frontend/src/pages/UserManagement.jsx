@@ -135,14 +135,23 @@ export default function UserManagement() {
                     </Button>
 
                     {isFilterOpen && (
-                        <div className="glass-panel" style={{
+                        <div className="glass-panel dropdown-menu" style={{
                             position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-                            padding: '0.5rem', minWidth: '150px', zIndex: 10, background: 'white'
+                            padding: '0.5rem', minWidth: '160px', zIndex: 10, background: 'white',
+                            borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                         }}>
                             {['All', 'User', 'Reporter', 'Admin'].map(role => (
                                 <div
                                     key={role}
-                                    style={{ padding: '8px 12px', cursor: 'pointer', borderRadius: '4px', background: filterRole === role ? '#f1f5f9' : 'transparent' }}
+                                    style={{
+                                        padding: '10px 12px',
+                                        cursor: 'pointer',
+                                        borderRadius: '6px',
+                                        background: filterRole === role ? '#f1f5f9' : 'transparent',
+                                        color: filterRole === role ? '#1e293b' : '#64748b',
+                                        fontWeight: filterRole === role ? '600' : '400',
+                                        transition: 'background 0.2s'
+                                    }}
                                     onClick={() => { setFilterRole(role); setIsFilterOpen(false); }}
                                 >
                                     {role}

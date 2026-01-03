@@ -156,3 +156,13 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
+
+/* 9. Dropdown Centering on Mobile */
+@media (max-width: 640px) {
+    .dropdown-menu {
+        right: 50% !important;
+        transform: translateX(50%) !important;
+        min-width: 180px !important;
+        left: auto !important;
+    }
+}
