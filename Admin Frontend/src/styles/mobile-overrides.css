@@ -30,15 +30,15 @@
         /* Slightly shorter header */
     }
 
-    /* Make Search Bar fluid but bounded */
-    .search-bar {
+    /* Make Header Search Bar fluid but bounded */
+    .header-search {
         width: 100% !important;
         max-width: 200px !important;
         transition: width 0.2s ease;
     }
 
-    /* When search is focused, expand it (optional UX improvement) */
-    .search-bar:focus-within {
+    /* When header search is focused, expand it (optional UX improvement) */
+    .header-search:focus-within {
         max-width: 100% !important;
         position: absolute;
         left: 60px;
@@ -157,12 +157,27 @@
     -webkit-overflow-scrolling: touch;
 }
 
-/* 9. Dropdown Centering on Mobile */
+/* 9. Dropdown Centering on Mobile (Modal Style) */
 @media (max-width: 640px) {
     .dropdown-menu {
-        right: 50% !important;
-        transform: translateX(50%) !important;
-        min-width: 180px !important;
-        left: auto !important;
+        position: fixed !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        min-width: 280px !important;
+        max-width: 90vw !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        z-index: 9999 !important;
+    }
+
+    .dropdown-menu>div {
+        padding: 14px 16px !important;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: center;
+    }
+
+    .dropdown-menu>div:last-child {
+        border-bottom: none;
     }
 }

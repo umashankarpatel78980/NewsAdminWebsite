@@ -66,28 +66,18 @@ export default function ActivityManagement() {
 
     return (
         <div>
-            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
                     <h1>Activity Logs</h1>
                     <p className="text-secondary">Monitor system events and user actions</p>
                 </div>
-                <Button onClick={handleExport}>
+                <Button onClick={handleExport} variant="secondary">
                     <Download size={18} style={{ marginRight: '8px' }} />
                     Export Logs
                 </Button>
             </div>
 
             <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div className="search-bar" style={{ flex: 1, minWidth: '250px', backgroundColor: 'white' }}>
-                    <Search size={18} className="search-icon" />
-                    <input
-                        type="text"
-                        placeholder="Search by user or action..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-
                 <div style={{ position: 'relative' }}>
                     <Button variant={filterType !== 'All' ? 'primary' : 'secondary'} onClick={() => setIsFilterOpen(!isFilterOpen)}>
                         <Filter size={18} style={{ marginRight: '8px' }} />
@@ -96,7 +86,7 @@ export default function ActivityManagement() {
 
                     {isFilterOpen && (
                         <div className="glass-panel dropdown-menu" style={{
-                            position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                            position: 'absolute', top: '100%', marginTop: '8px',
                             padding: '0.5rem', minWidth: '160px', zIndex: 10, background: 'white',
                             borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                         }}>
@@ -104,7 +94,7 @@ export default function ActivityManagement() {
                                 <div
                                     key={type}
                                     style={{
-                                        padding: '10px 12px',
+                                        padding: '12px 12px',
                                         cursor: 'pointer',
                                         borderRadius: '6px',
                                         background: filterType === type ? '#f1f5f9' : 'transparent',
@@ -119,6 +109,16 @@ export default function ActivityManagement() {
                             ))}
                         </div>
                     )}
+                </div>
+
+                <div className="search-bar" style={{ flex: 1, minWidth: '250px', backgroundColor: 'white' }}>
+                    <Search size={18} className="search-icon" />
+                    <input
+                        type="text"
+                        placeholder="Search by user or action..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
             </div>
 

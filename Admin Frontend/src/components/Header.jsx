@@ -47,7 +47,7 @@ export default function Header({ onMenuClick }) {
                 <button className="menu-toggle" onClick={onMenuClick}>
                     <Menu size={24} />
                 </button>
-                <div className="search-bar" ref={searchRef} style={{ position: 'relative' }}>
+                <div className="search-bar header-search" ref={searchRef} style={{ position: 'relative' }}>
                     <Search size={18} className="search-icon" />
                     <input
                         type="text"
