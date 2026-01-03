@@ -52,7 +52,6 @@ export default function LoginPage() {
                                 <input
                                     type="email"
                                     required
-                                    placeholder="admin@newsportal.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                 />
@@ -66,7 +65,6 @@ export default function LoginPage() {
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     required
-                                    placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
