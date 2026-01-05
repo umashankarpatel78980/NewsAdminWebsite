@@ -124,6 +124,8 @@ export default function NewsManagement() {
                         <option value="Sports">Sports</option>
                         <option value="Technology">Technology</option>
                         <option value="World">World</option>
+                        <option value="Politics">Politics</option>
+                        <option value="Entertainment">Entertainment</option>
                     </select>
                 </div>
                 <Button onClick={() => setIsCreateModalOpen(true)}>Create Article</Button>
