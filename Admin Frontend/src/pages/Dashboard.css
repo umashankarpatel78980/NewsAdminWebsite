@@ -178,6 +178,9 @@
 .action-btns {
     display: flex;
     gap: var(--space-2);
+    min-width: 80px;
+    /* Ensure buttons don't squeeze too much on mobile */
+    justify-content: flex-end;
 }
 
 .btn-approve,
@@ -384,7 +387,25 @@
 
 @media (max-width: 480px) {
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-3);
+    }
+
+    .stat-card {
+        padding: var(--space-3);
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .stat-icon {
+        padding: var(--space-2);
+    }
+
+    .stat-icon svg {
+        width: 18px;
+        height: 18px;
     }
 
     .time-filter {
@@ -406,13 +427,33 @@
         padding: var(--space-3);
     }
 
-    /* Ensure table doesn't break layout */
+    /* Ensure table doesn't break layout and items aren't cut off */
     .table-responsive {
-        width: 100%;
+        width: calc(100% + 1.5rem);
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        margin: 0 -1rem;
-        padding: 0 1rem;
+        margin: 0 -0.75rem;
+        padding: 0 0.75rem;
+    }
+
+    .summary-table th,
+    .summary-table td {
+        padding: var(--space-3) var(--space-2);
+    }
+
+    .summary-table th:last-child,
+    .summary-table td:last-child {
+        padding-right: var(--space-8);
+        /* Add extra space at the end of scroll */
+    }
+
+    .quick-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-2);
+    }
+
+    .action-btn {
+        padding: var(--space-3);
     }
 }
 
