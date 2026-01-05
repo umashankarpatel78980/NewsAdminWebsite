@@ -41,9 +41,35 @@
 
 .analytics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
     margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .analytics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .analytics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .analytics-card {
+        padding: 1rem;
+    }
+
+    .analytics-card .value {
+        font-size: 1.25rem;
+    }
+
+    .analytics-card .title {
+        font-size: 0.75rem;
+    }
 }
 
 .analytics-card {
@@ -118,6 +144,24 @@
 .export-group {
     display: flex;
     gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .moderation-content .table-container {
+        border-radius: 0;
+        margin: 0 -1rem;
+        /* Full bleed on small screens */
+    }
+
+    .moderation-content .table {
+        min-width: 800px;
+        /* Force scroll for multiple columns */
+    }
+
+    .tab-btn {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+    }
 }
 
 .moderation-header {

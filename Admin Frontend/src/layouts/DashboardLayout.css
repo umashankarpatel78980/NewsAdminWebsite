@@ -53,6 +53,14 @@
     overflow-x: hidden;
 }
 
+@media (max-width: 1024px) {
+    .main-content {
+        padding: var(--space-4);
+        padding-top: calc(64px + var(--space-4));
+        /* Offset for fixed header */
+    }
+}
+
 @media (max-width: 640px) {
     .main-content {
         padding: var(--space-4);
