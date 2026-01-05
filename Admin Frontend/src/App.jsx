@@ -9,6 +9,7 @@ import ReporterEvents from './pages/ReporterEvents';
 import ActivityManagement from './pages/ActivityManagement';
 import Reports from './pages/Reports';
 import LoginPage from './pages/LoginPage';
+import ForgotPassword from './pages/ForgotPassword';
 
 // Simple Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -22,6 +23,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         <Route path="/" element={
           <ProtectedRoute>

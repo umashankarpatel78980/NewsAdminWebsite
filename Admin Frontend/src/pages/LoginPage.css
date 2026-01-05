@@ -211,7 +211,7 @@
     margin-top: var(--space-4);
     background: linear-gradient(135deg, var(--primary-500), #4f46e5);
     color: white;
-    padding: var(--space-3.5);
+    padding: var(--space-2);
     border-radius: var(--radius-md);
     border: none;
     font-weight: 600;

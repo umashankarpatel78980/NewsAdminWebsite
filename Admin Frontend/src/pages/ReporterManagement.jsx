@@ -107,8 +107,18 @@ export default function ReporterManagement() {
                         <div className="form-group">
                             <label className="form-label">Submitted Sample Articles</label>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <Button variant="ghost" size="sm"><FileText size={16} /> Aadhar Card</Button>
-                                <Button variant="ghost" size="sm"><FileText size={16} /> Pan Card</Button>
+                                <Button variant="ghost" size="sm" asChild>
+                                    <a href="https://example.com/aadhar.pdf" target="_blank">
+                                        <FileText size={16} /> Aadhar Card
+                                    </a>
+                                </Button>
+
+                                <Button variant="ghost" size="sm" asChild>
+                                    <a href="https://example.com/pan.pdf" target="_blank">
+                                        <FileText size={16} /> Pan Card
+                                    </a>
+                                </Button>
+
                             </div>
                         </div>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import './LoginPage.css';
 
@@ -84,7 +84,7 @@ export default function LoginPage() {
                                 <span className="checkmark"></span>
                                 Remember Me
                             </label>
-                            <a href="#" className="forgot-password">Forgot Password?</a>
+                            <Link to="/forgot-password" size={18} className="forgot-password">Forgot Password?</Link>
                         </div>
 
                         <button
