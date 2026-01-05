@@ -369,7 +369,11 @@ export default function Dashboard() {
                                                 <td>{news.author}</td>
                                                 <td>{news.date}</td>
                                                 <td>
-                                                    <div className="action-btns">
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px'
+                                                    }}>
                                                         <button
                                                             className="btn-approve"
                                                             title="Approve"
@@ -446,6 +450,6 @@ export default function Dashboard() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
