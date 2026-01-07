@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     Users,
     Newspaper,
@@ -143,35 +143,59 @@ const COLORS = [
     '#84cc16', // Lime
 ];
 
+import { getDashboardStatsAPI, updateNewsStatusAPI, getDashboardAnalyticsAPI } from '../services/userApi';
+
 export default function Dashboard() {
     const navigate = useNavigate();
-    const [pendingNews, setPendingNews] = useState(MOCK_PENDING_NEWS);
+    const [pendingNews, setPendingNews] = useState([]);
     const [stats, setStats] = useState(INITIAL_STATS);
+    const [loading, setLoading] = useState(true);
     const [timeFrame, setTimeFrame] = useState('Week');
+    const [analyticsData, setAnalyticsData] = useState(null);
 
-    const activeData = useMemo(() => TIME_DATA[timeFrame], [timeFrame]);
+    const activeData = useMemo(() => {
+        if (analyticsData) return analyticsData;
+        return TIME_DATA[timeFrame];
+    }, [timeFrame, analyticsData]);
 
-    const handleAction = (id, action) => {
-        const newsItem = pendingNews.find(n => n.id === id);
-        if (!newsItem) return;
+    useEffect(() => {
+        fetchDashboardData();
+        fetchAnalytics();
+    }, []);
 
-        // Visual feedback: remove from pending list
-        setPendingNews(prev => prev.filter(n => n.id !== id));
-
-        // Update stats summary (simulation)
-        if (action === 'approve') {
-            setStats(prev => prev.map(s => {
-                if (s.label === 'Published News') return { ...s, value: (parseInt(s.value.replace(',', '')) + 1).toLocaleString() };
-                if (s.label === 'Pending News') return { ...s, value: (parseInt(s.value) - 1).toString() };
-                return s;
+    const fetchDashboardData = async () => {
+        try {
+            const res = await getDashboardStatsAPI();
+            setStats(res.data.stats.map(s => {
+                const original = INITIAL_STATS.find(i => i.label === s.label);
+                return { ...original, ...s, value: s.value.toLocaleString() };
             }));
-            alert(`Approved: "${newsItem.title}"`);
-        } else {
-            setStats(prev => prev.map(s => {
-                if (s.label === 'Pending News') return { ...s, value: (parseInt(s.value) - 1).toString() };
-                return s;
-            }));
-            alert(`Rejected: "${newsItem.title}"`);
+            setPendingNews(res.data.pendingNews);
+        } catch (error) {
+            console.error("Fetch Dashboard Error:", error);
+        }
+    };
+
+    const fetchAnalytics = async () => {
+        try {
+            setLoading(true);
+            const res = await getDashboardAnalyticsAPI();
+            setAnalyticsData(res.data);
+        } catch (error) {
+            console.error("Fetch Analytics Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAction = async (id, action) => {
+        try {
+            const status = action === 'approve' ? 'Published' : 'Rejected';
+            await updateNewsStatusAPI(id, status);
+            fetchDashboardData();
+            alert(`Succesfully ${status} article.`);
+        } catch (error) {
+            console.error("Update Status Error:", error);
         }
     };
 
@@ -195,8 +219,8 @@ export default function Dashboard() {
                         ))}
                     </div>
                     <div className="admin-status glass-panel" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
-                        <div style={{ fontWeight: 600 }}>Admin: Umashankar</div>
-                        <div style={{ color: 'var(--slate-500)', fontSize: '0.75rem' }}>Last Login: 2 mins ago</div>
+                        <div style={{ fontWeight: 600 }}>Admin: {JSON.parse(localStorage.getItem('adminUser'))?.name || 'Admin'}</div>
+                        <div style={{ color: 'var(--slate-500)', fontSize: '0.75rem' }}>Last Login: Recently</div>
                     </div>
                 </div>
             </div>
@@ -239,7 +263,7 @@ export default function Dashboard() {
                             <h3>Traffic Trends (Wave)</h3>
                             <span className="text-secondary" style={{ fontSize: '0.75rem' }}>Active Sessions</span>
                         </div>
-                        <div style={{ height: '220px' }}>
+                        <div style={{ height: '220px', minHeight: '220px', minWidth: '0' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={activeData.wave}>
                                     <defs>
@@ -264,7 +288,7 @@ export default function Dashboard() {
                             <h3>News Distribution (Bar)</h3>
                             <span className="text-secondary" style={{ fontSize: '0.75rem' }}>By Category</span>
                         </div>
-                        <div style={{ height: '220px' }}>
+                        <div style={{ height: '220px', minHeight: '220px', minWidth: '0' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={activeData.bar}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -284,7 +308,7 @@ export default function Dashboard() {
                             <span className="text-secondary" style={{ fontSize: '0.75rem' }}>Market Share</span>
                         </div>
                         <div style={{ height: '220px', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ flex: 1, minHeight: '150px' }}>
+                            <div style={{ flex: 1, minHeight: '150px', height: '150px' }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
@@ -324,7 +348,7 @@ export default function Dashboard() {
                             <h3>Engagement Depth (Dot)</h3>
                             <span className="text-secondary" style={{ fontSize: '0.75rem' }}>User Retention</span>
                         </div>
-                        <div style={{ height: '220px' }}>
+                        <div style={{ height: '220px', minHeight: '220px', minWidth: '0' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <ScatterChart>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -364,10 +388,10 @@ export default function Dashboard() {
                                 <tbody>
                                     {pendingNews.length > 0 ? (
                                         pendingNews.map(news => (
-                                            <tr key={news.id}>
+                                            <tr key={news._id}>
                                                 <td className="title-cell">{news.title}</td>
                                                 <td>{news.author}</td>
-                                                <td>{news.date}</td>
+                                                <td>{new Date(news.date).toLocaleDateString()}</td>
                                                 <td>
                                                     <div style={{
                                                         display: 'flex',
@@ -377,14 +401,14 @@ export default function Dashboard() {
                                                         <button
                                                             className="btn-approve"
                                                             title="Approve"
-                                                            onClick={() => handleAction(news.id, 'approve')}
+                                                            onClick={() => handleAction(news._id, 'approve')}
                                                         >
                                                             <CheckCircle2 size={16} />
                                                         </button>
                                                         <button
                                                             className="btn-reject"
                                                             title="Reject"
-                                                            onClick={() => handleAction(news.id, 'reject')}
+                                                            onClick={() => handleAction(news._id, 'reject')}
                                                         >
                                                             <XCircle size={16} />
                                                         </button>

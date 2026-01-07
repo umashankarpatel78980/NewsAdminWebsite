@@ -1,26 +1,44 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import { Activity, Search, Filter, Eye, Download, Server, User, ShieldAlert } from 'lucide-react';
-
-const MOCK_ACTIVITIES = [
-    { id: 1, action: 'User Login', user: 'Alice Johnson', role: 'User', ip: '192.168.1.1', time: '2025-12-30 08:30 AM', status: 'Success', detail: 'Logged in successfully from Chrome/Windows.' },
-    { id: 2, action: 'Article Created', user: 'Bob Smith', role: 'Reporter', ip: '192.168.1.42', time: '2025-12-30 09:15 AM', status: 'Success', detail: 'Created article "Tech Trends 2026".' },
-    { id: 3, action: 'Failed Login', user: 'Unknown', role: 'Guest', ip: '45.12.33.1', time: '2025-12-30 09:20 AM', status: 'Failed', detail: 'Invalid password attempt 3 times.' },
-    { id: 4, action: 'User Banned', user: 'Admin User', role: 'Admin', ip: '10.0.0.1', time: '2025-12-30 10:05 AM', status: 'Success', detail: 'Banned user "Charlie Brown" for spamming.' },
-    { id: 5, action: 'System Update', user: 'System', role: 'System', ip: 'localhost', time: '2025-12-30 12:00 PM', status: 'Info', detail: 'Daily database backup completed.' },
-    { id: 6, action: 'Report Resolved', user: 'Admin User', role: 'Admin', ip: '10.0.0.1', time: '2025-12-30 02:45 PM', status: 'Success', detail: 'Resolved harassment report #442.' },
-];
+import { getLogsAPI } from '../services/userApi';
 
 export default function ActivityManagement() {
-    const [activities, setActivities] = useState(MOCK_ACTIVITIES);
+    const [activities, setActivities] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('All');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedActivity, setSelectedActivity] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    useEffect(() => {
+        fetchLogs();
+    }, []);
+
+    const fetchLogs = async () => {
+        try {
+            setLoading(true);
+            const res = await getLogsAPI();
+            setActivities(res.data.map(log => ({
+                id: log._id,
+                action: log.action,
+                user: log.user,
+                role: 'Admin', // Placeholder or use dynamic if available
+                ip: '127.0.0.1',
+                time: new Date(log.timestamp).toLocaleString(),
+                status: 'Success',
+                detail: log.details
+            })));
+        } catch (error) {
+            console.error("Fetch Logs Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const filteredActivities = activities.filter(item => {
         const matchesSearch = item.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -134,7 +152,7 @@ export default function ActivityManagement() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {filteredActivities.length > 0 ? (
+                    {activities.length > 0 ? (
                         filteredActivities.map((item) => (
                             <TableRow key={item.id}>
                                 <TableCell>
@@ -171,7 +189,7 @@ export default function ActivityManagement() {
                     ) : (
                         <TableRow>
                             <TableCell className="text-center" colSpan={6} style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                                No activities found matching filters.
+                                {loading ? 'Loading system logs...' : 'No activities found matching filters.'}
                             </TableCell>
                         </TableRow>
                     )}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { loginUserAPI } from '../services/userApi';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -10,21 +11,32 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const [error, setError] = useState('');
+
+    const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+        setError('');
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const res = await loginUserAPI({ email, password });
+
+            // Success logic
+            localStorage.setItem('token', res.data.token);
             localStorage.setItem('isAdminAuthenticated', 'true');
             localStorage.setItem('adminUser', JSON.stringify({
-                name: 'Admin User',
-                role: 'Super Admin',
-                email: email
+                name: res.data.user.fullName,
+                role: res.data.user.role,
+                email: res.data.user.email
             }));
+
             setIsLoading(false);
             navigate('/');
-        }, 1500);
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -42,6 +54,7 @@ export default function LoginPage() {
                         </div>
                         <h2>Admin Portal</h2>
                         <p className="text-secondary-light">Please sign in to continue to management</p>
+                        {error && <div className="error-message" style={{ color: '#ef4444', backgroundColor: '#fee2e2', padding: '0.75rem', borderRadius: '0.5rem', marginTop: '1rem', fontSize: '0.875rem' }}>{error}</div>}
                     </div>
 
                     <form className="login-form" onSubmit={handleLogin}>

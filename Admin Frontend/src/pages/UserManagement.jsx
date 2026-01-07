@@ -1,21 +1,15 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Shield, Ban, Trash2, Plus, Upload, MapPin, Briefcase, GraduationCap, Download } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import { getUsersAPI, getUserByIdAPI, addUserAPI, updateUserStatusAPI, deleteUserAPI } from '../services/userApi';
 
 // Mock Data
-const MOCK_USERS = [
-    { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'User', status: 'Active', joined: '2025-10-12', headline: 'Software Engineer', location: 'New York, USA' },
-    { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'Reporter', status: 'Active', joined: '2025-09-15', headline: 'Journalist at Daily News', location: 'London, UK' },
-    { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', role: 'User', status: 'Banned', joined: '2025-11-01', headline: 'Student', location: 'Toronto, Canada' },
-    { id: 4, name: 'David Wilson', email: 'david@example.com', role: 'Admin', status: 'Active', joined: '2025-08-20', headline: 'System Administrator', location: 'San Francisco, USA' },
-    { id: 5, name: 'Eve Davis', email: 'eve@example.com', role: 'User', status: 'Inactive', joined: '2025-12-05', headline: 'Freelance Designer', location: 'Berlin, Germany' },
-];
 
 export default function UserManagement() {
-    const [users, setUsers] = useState(MOCK_USERS);
+    const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRole, setFilterRole] = useState('All');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -23,10 +17,10 @@ export default function UserManagement() {
     // Add User State
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
     const [newUser, setNewUser] = useState({
-        name: '',
+        fullName: '',
         email: '',
         role: 'User',
-        status: 'Active',
+        status: 'Pending',
         headline: '',
         location: '',
         about: '',
@@ -34,10 +28,23 @@ export default function UserManagement() {
         education: '',
         profileImage: null
     });
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const fetchUsers = async () => {
+        try {
+            const res = await getUsersAPI();
+            setUsers(res.data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
 
     // Derived state for filtered users
     const filteredUsers = users.filter(user => {
-        const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter = filterRole === 'All' || user.role === filterRole;
         return matchesSearch && matchesFilter;
@@ -54,8 +61,8 @@ export default function UserManagement() {
 
     const handleExport = () => {
         const csvContent = "data:text/csv;charset=utf-8,"
-            + "ID,Name,Email,Role,Status,Joined,Headline,Location\n"
-            + users.map(u => `${u.id},${u.name},${u.email},${u.role},${u.status},${u.joined},"${u.headline || ''}","${u.location || ''}"`).join("\n");
+            + "ID,FullName,Email,Role,Status,Joined,Headline,Location\n"
+            + users.map(u => `${u._id},${u.fullName},${u.email},${u.role},${u.status},${u.joined},"${u.headline || ''}","${u.location || ''}"`).join("\n");
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -65,33 +72,51 @@ export default function UserManagement() {
         document.body.removeChild(link);
     };
 
-    const handleAction = (id, action) => {
-        if (action === 'delete') {
-            if (confirm('Are you sure you want to delete this user?')) {
-                setUsers(users.filter(u => u.id !== id));
+    const handleAction = async (id, action) => {
+        try {
+            if (action === 'delete') {
+                if (confirm('Are you sure you want to delete this user?')) {
+                    await deleteUserAPI(id);
+                    fetchUsers();
+                }
+            } else if (action === 'block') {
+                await updateUserStatusAPI(id, 'Banned');
+                fetchUsers();
+            } else if (action === 'activate') {
+                await updateUserStatusAPI(id, 'Active');
+                fetchUsers();
             }
-        } else if (action === 'block') {
-            setUsers(users.map(u => u.id === id ? { ...u, status: 'Banned' } : u));
-        } else if (action === 'activate') {
-            setUsers(users.map(u => u.id === id ? { ...u, status: 'Active' } : u));
+        } catch (error) {
+            console.error(`Action ${action} failed:`, error);
         }
     };
 
-    const handleAddUser = (e) => {
+    const handleAddUser = async (e) => {
         e.preventDefault();
-        const userToAdd = {
-            id: users.length + 1,
-            ...newUser,
-            joined: new Date().toISOString().split('T')[0],
-            // Create a fake URL for the uploaded image if present
-            profileImageUrl: newUser.profileImage ? URL.createObjectURL(newUser.profileImage) : null
-        };
-        setUsers([userToAdd, ...users]);
-        setNewUser({
-            name: '', email: '', role: 'User', status: 'Active',
-            headline: '', location: '', about: '', currentPosition: '', education: '', profileImage: null
-        });
-        setIsAddUserOpen(false);
+        try {
+            // Map frontend fields to backend model fields
+            const userData = {
+                fullName: newUser.fullName,
+                email: newUser.email,
+                password: 'Password123!',
+                role: newUser.role,
+                status: newUser.status,
+                headline: newUser.headline,
+                address: newUser.location,
+                position: newUser.currentPosition,
+                education: newUser.education,
+                experience: newUser.about // Assuming 'about' goes to 'experience'
+            };
+            await addUserAPI(userData);
+            setNewUser({
+                fullName: '', email: '', role: 'User', status: 'Pending',
+                headline: '', location: '', about: '', currentPosition: '', education: '', profileImage: null
+            });
+            setIsAddUserOpen(false);
+            fetchUsers();
+        } catch (error) {
+            console.error("Add user failed:", error);
+        }
     };
 
     const handleImageUpload = (e) => {
@@ -179,7 +204,7 @@ export default function UserManagement() {
                 <TableBody>
                     {filteredUsers.length > 0 ? (
                         filteredUsers.map((user) => (
-                            <TableRow key={user.id}>
+                            <TableRow key={user._id}>
                                 <TableCell>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
@@ -188,13 +213,13 @@ export default function UserManagement() {
                                             fontWeight: 600, color: '#475569', overflow: 'hidden'
                                         }}>
                                             {user.profileImageUrl ? (
-                                                <img src={user.profileImageUrl} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <img src={user.profileImageUrl} alt={user.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : (
-                                                user.name.charAt(0)
+                                                user.fullName?.charAt(0) || 'U'
                                             )}
                                         </div>
                                         <div>
-                                            <div style={{ fontWeight: 500 }}>{user.name}</div>
+                                            <div style={{ fontWeight: 500 }}>{user.fullName}</div>
                                             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{user.email}</div>
                                             {user.headline && <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{user.headline}</div>}
                                         </div>
@@ -209,19 +234,19 @@ export default function UserManagement() {
                                 <TableCell>
                                     <Badge variant={getStatusColor(user.status)}>{user.status}</Badge>
                                 </TableCell>
-                                <TableCell>{user.joined}</TableCell>
+                                <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                                 <TableCell>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                         {user.status === 'Banned' ? (
-                                            <Button variant="ghost" size="sm" title="Unban" onClick={() => handleAction(user.id, 'activate')}>
+                                            <Button variant="ghost" size="sm" title="Unban" onClick={() => handleAction(user._id, 'activate')}>
                                                 <Shield size={18} color="green" />
                                             </Button>
                                         ) : (
-                                            <Button variant="ghost" size="sm" title="Ban" onClick={() => handleAction(user.id, 'block')}>
+                                            <Button variant="ghost" size="sm" title="Ban" onClick={() => handleAction(user._id, 'block')}>
                                                 <Ban size={18} color="orange" />
                                             </Button>
                                         )}
-                                        <Button variant="ghost" size="sm" title="Delete" onClick={() => handleAction(user.id, 'delete')}>
+                                        <Button variant="ghost" size="sm" title="Delete" onClick={() => handleAction(user._id, 'delete')}>
                                             <Trash2 size={18} color="red" />
                                         </Button>
                                     </div>
@@ -284,8 +309,8 @@ export default function UserManagement() {
                                 required
                                 placeholder='Ex: John Doe'
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}
-                                value={newUser.name}
-                                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                                value={newUser.fullName}
+                                onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
                             />
                         </div>
                         <div style={{ marginBottom: '1rem' }}>
@@ -379,7 +404,7 @@ export default function UserManagement() {
                                 <option value="Admin">Admin</option>
                             </select>
                         </div>
-                        <div style={{ marginBottom: '1.5rem' }}>
+                        { /* <div style={{ marginBottom: '1.5rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Status</label>
                             <select
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}
@@ -389,8 +414,9 @@ export default function UserManagement() {
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                                 <option value="Banned">Banned</option>
+                                <option value="Pending">Pending</option>
                             </select>
-                        </div>
+                        </div> */}
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>

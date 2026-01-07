@@ -4,17 +4,11 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import { Edit2, Trash2, Eye, CheckCircle, XCircle, Upload } from 'lucide-react';
-
-const MOCK_NEWS = [
-    { id: 1, title: 'Local Library Opens New Wing', author: 'Sarah Connor', category: 'Local', status: 'Published', date: '2025-12-28', image: null },
-    { id: 2, title: 'Tech Giants Announce Merger', author: 'John Doe', category: 'Business', status: 'Pending', date: '2025-12-29', image: null },
-    { id: 3, title: 'Tips for Healthy Living', author: 'Guest User', category: 'Lifestyle', status: 'Rejected', date: '2025-12-30', image: null },
-    { id: 4, title: 'Community Park Renovation', author: 'Alice Johnson', category: 'Local', status: 'Published', date: '2025-12-27', image: null },
-    { id: 5, title: 'Crypto Market Trends', author: 'John Doe', category: 'Business', status: 'Pending', date: '2025-12-31', image: null },
-];
+import { getNewsAPI, createNewsAPI, updateNewsStatusAPI, deleteNewsAPI } from '../services/userApi';
 
 export default function NewsManagement() {
-    const [news, setNews] = useState(MOCK_NEWS);
+    const [news, setNews] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const [selectedArticle, setSelectedArticle] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,26 +18,45 @@ export default function NewsManagement() {
     const [filterStatus, setFilterStatus] = useState("All");
     const [filterCategory, setFilterCategory] = useState("All");
 
-    // Derived state for multiple filters
-    const filteredArticles = news.filter(article => {
-        const matchesStatus = filterStatus === "All" || article.status === filterStatus;
-        const matchesCategory = filterCategory === "All" || article.category === filterCategory;
-        return matchesStatus && matchesCategory;
-    });
+    useEffect(() => {
+        fetchNews();
+    }, []);
+
+    const fetchNews = async () => {
+        try {
+            setLoading(true);
+            const res = await getNewsAPI();
+            setNews(res.data);
+        } catch (error) {
+            console.error("Fetch News Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleOpenModal = (article) => {
         setSelectedArticle(article);
         setIsModalOpen(true);
     };
 
-    const updateStatus = (id, newStatus) => {
-        setNews(news.map(n => n.id === id ? { ...n, status: newStatus } : n));
-        setIsModalOpen(false);
+    const updateStatus = async (id, newStatus) => {
+        try {
+            await updateNewsStatusAPI(id, newStatus);
+            fetchNews();
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error("Update Status Error:", error);
+        }
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (confirm('Are you sure you want to delete this article?')) {
-            setNews(news.filter(n => n.id !== id));
+            try {
+                await deleteNewsAPI(id);
+                fetchNews();
+            } catch (error) {
+                console.error("Delete News Error:", error);
+            }
         }
     };
 
@@ -53,17 +66,46 @@ export default function NewsManagement() {
         }
     };
 
-    const handleCreate = () => {
+    const handleCreate = async (status = 'Pending') => {
         if (!newArticle.title || !newArticle.content) {
             alert('Please fill in all fields');
             return;
         }
-        const id = news.length + 1;
-        const date = new Date().toISOString().split('T')[0];
-        setNews([{ id, ...newArticle, status: 'Published', date }, ...news]);
-        setIsCreateModalOpen(false);
-        setNewArticle({ title: '', author: 'Admin', category: 'Local', content: '', image: null });
+
+        try {
+            let articleData = { ...newArticle, status };
+
+            // Convert image to Base64 if it's a File
+            if (newArticle.image instanceof File) {
+                const base64Image = await convertToBase64(newArticle.image);
+                articleData = { ...articleData, image: base64Image };
+            }
+
+            await createNewsAPI(articleData);
+            setIsCreateModalOpen(false);
+            setNewArticle({ title: '', author: 'Admin', category: 'Local', content: '', image: null });
+            fetchNews();
+        } catch (error) {
+            console.error("Create News Error:", error);
+            alert("Failed to create news. See console for details.");
+        }
     };
+
+    const convertToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    // Derived state for multiple filters
+    const filteredArticles = news.filter(article => {
+        const matchesStatus = filterStatus === "All" || article.status === filterStatus;
+        const matchesCategory = filterCategory === "All" || article.category === filterCategory;
+        return matchesStatus && matchesCategory;
+    });
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -145,7 +187,7 @@ export default function NewsManagement() {
                 <TableBody>
                     {filteredArticles.length > 0 ? (
                         filteredArticles.map((item) => (
-                            <TableRow key={item.id}>
+                            <TableRow key={item._id}>
                                 <TableCell>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{ width: '48px', height: '32px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
@@ -173,7 +215,7 @@ export default function NewsManagement() {
                                         <Button variant="ghost" size="sm" onClick={() => handleOpenModal(item)} title="Review">
                                             <Eye size={18} />
                                         </Button>
-                                        <Button variant="ghost" size="sm" className="text-danger" title="Delete" onClick={() => handleDelete(item.id)}>
+                                        <Button variant="ghost" size="sm" className="text-danger" title="Delete" onClick={() => handleDelete(item._id)}>
                                             <Trash2 size={18} />
                                         </Button>
                                     </div>
@@ -184,7 +226,7 @@ export default function NewsManagement() {
                         <TableRow>
                             <TableCell colSpan={6}>
                                 <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-                                    No articles found for status "{filterStatus}" and category "{filterCategory}"
+                                    {loading ? 'Loading...' : `No articles found for status "${filterStatus}" and category "${filterCategory}"`}
                                 </div>
                             </TableCell>
                         </TableRow>
@@ -204,7 +246,7 @@ export default function NewsManagement() {
                         <div style={{ display: 'flex', gap: '1rem', color: '#64748b', marginBottom: '1.5rem' }}>
                             <span>By {selectedArticle.author}</span>
                             <span>•</span>
-                            <span>{selectedArticle.date}</span>
+                            <span>{new Date(selectedArticle.date).toLocaleDateString()}</span>
                             <span>•</span>
                             <Badge variant="info">{selectedArticle.category}</Badge>
                         </div>
@@ -220,14 +262,14 @@ export default function NewsManagement() {
                         )}
 
                         <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', minHeight: '200px', marginBottom: '1.5rem' }}>
-                            <p>{selectedArticle.content || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."}</p>
+                            <p>{selectedArticle.content || "No content provided."}</p>
                         </div>
 
                         <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                            <Button variant="danger" onClick={() => updateStatus(selectedArticle.id, 'Rejected')}>
+                            <Button variant="danger" onClick={() => updateStatus(selectedArticle._id, 'Rejected')}>
                                 <XCircle size={18} /> Reject
                             </Button>
-                            <Button variant="primary" onClick={() => updateStatus(selectedArticle.id, 'Published')}>
+                            <Button variant="primary" onClick={() => updateStatus(selectedArticle._id, 'Published')}>
                                 <CheckCircle size={18} /> Publish
                             </Button>
                         </div>
@@ -306,7 +348,8 @@ export default function NewsManagement() {
                 </div>
                 <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
                     <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
-                    <Button onClick={handleCreate}>Publish Now</Button>
+                    <Button variant="outline" onClick={() => handleCreate('Pending')}>Save as Draft</Button>
+                    <Button onClick={() => handleCreate('Published')}>Publish Now</Button>
                 </div>
             </Modal>
         </div>

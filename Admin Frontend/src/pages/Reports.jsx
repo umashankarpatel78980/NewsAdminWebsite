@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -30,36 +30,50 @@ import {
     Area
 } from 'recharts';
 import './Reports.css';
-
-const MOCK_REPORTS = [
-    { id: 1, type: 'Spam', target: 'Comment #1234', reporter: 'user123', status: 'Pending', severity: 'Low' },
-    { id: 2, type: 'Harassment', target: 'User: BobSmith', reporter: 'alice_j', status: 'Investigating', severity: 'High' },
-    { id: 3, type: 'Fake News', target: 'Article: Aliens Land', reporter: 'fact_checker', status: 'Resolved', severity: 'Medium' },
-];
-
-const GROWTH_DATA = [
-    { name: 'Mon', visits: 400, users: 240, posts: 240 },
-    { name: 'Tue', visits: 300, users: 139, posts: 221 },
-    { name: 'Wed', visits: 200, users: 980, posts: 229 },
-    { name: 'Thu', visits: 278, users: 390, posts: 200 },
-    { name: 'Fri', visits: 189, users: 480, posts: 218 },
-    { name: 'Sat', visits: 239, users: 380, posts: 250 },
-    { name: 'Sun', visits: 349, users: 430, posts: 210 },
-];
-
-const CATEGORY_DATA = [
-    { name: 'Politics', value: 45 },
-    { name: 'Sports', value: 30 },
-    { name: 'Tech', value: 25 },
-    { name: 'Ent.', value: 20 },
-    { name: 'Global', value: 15 },
-];
+import { getReportsAPI, updateReportStatusAPI, getReportsAnalyticsAPI } from '../services/userApi';
 
 export default function Reports() {
-    const [reports, setReports] = useState(MOCK_REPORTS);
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selectedReport, setSelectedReport] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('analytics');
+    const [analyticsData, setAnalyticsData] = useState({
+        engagementTrends: [],
+        categoryDistribution: []
+    });
+
+    useEffect(() => {
+        if (activeTab === 'moderation') {
+            fetchReports();
+        } else {
+            fetchAnalytics();
+        }
+    }, [activeTab]);
+
+    const fetchAnalytics = async () => {
+        try {
+            setLoading(true);
+            const res = await getReportsAnalyticsAPI();
+            setAnalyticsData(res.data);
+        } catch (error) {
+            console.error("Fetch Reports Analytics Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchReports = async () => {
+        try {
+            setLoading(true);
+            const res = await getReportsAPI();
+            setReports(res.data);
+        } catch (error) {
+            console.error("Fetch Reports Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getSeverityColor = (severity) => {
         switch (severity) {
@@ -75,9 +89,15 @@ export default function Reports() {
         setIsModalOpen(true);
     };
 
-    const handleAction = (id, action) => {
-        setReports(reports.map(r => r.id === id ? { ...r, status: action === 'dismiss' ? 'Dismissed' : 'Resolved' } : r));
-        setIsModalOpen(false);
+    const handleAction = async (id, action) => {
+        try {
+            const status = action === 'dismiss' ? 'Dismissed' : 'Resolved';
+            await updateReportStatusAPI(id, status);
+            fetchReports();
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error("Update Report Error:", error);
+        }
     };
 
     return (
@@ -155,7 +175,7 @@ export default function Reports() {
                         <div className="chart-box glass-panel">
                             <h3>Engagement Trends</h3>
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={GROWTH_DATA}>
+                                <AreaChart data={analyticsData.engagementTrends}>
                                     <defs>
                                         <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="var(--primary-500)" stopOpacity={0.3} />
@@ -168,15 +188,15 @@ export default function Reports() {
                                     <Tooltip
                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-lg)' }}
                                     />
-                                    <Area type="monotone" dataKey="visits" stroke="var(--primary-500)" fillOpacity={1} fill="url(#colorVisits)" strokeWidth={2} />
-                                    <Area type="monotone" dataKey="users" stroke="#10b981" fillOpacity={0} strokeWidth={2} />
+                                    <Area type="monotone" dataKey="likes" stroke="var(--primary-500)" fillOpacity={1} fill="url(#colorVisits)" strokeWidth={2} />
+                                    <Area type="monotone" dataKey="posts" stroke="#10b981" fillOpacity={0} strokeWidth={2} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
                         <div className="chart-box glass-panel">
                             <h3>Top Categories</h3>
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={CATEGORY_DATA} layout="vertical">
+                                <BarChart data={analyticsData.categoryDistribution} layout="vertical">
                                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                                     <XAxis type="number" hide />
                                     <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 12, fontWeight: 500 }} />
@@ -205,15 +225,15 @@ export default function Reports() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {reports.map((report) => (
-                                <TableRow key={report.id}>
+                            {reports.length > 0 ? reports.map((report) => (
+                                <TableRow key={report._id}>
                                     <TableCell>
                                         <div style={{ fontWeight: 500 }}>{report.type}</div>
                                     </TableCell>
                                     <TableCell>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <MessageSquare size={14} color="#94a3b8" />
-                                            {report.target}
+                                            {report.targetContent}
                                         </div>
                                     </TableCell>
                                     <TableCell>{report.reporter}</TableCell>
@@ -229,7 +249,13 @@ export default function Reports() {
                                         <Button variant="primary" size="sm" onClick={() => handleReview(report)}>Review</Button>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+                                        {loading ? 'Loading...' : 'No reports pending review.'}
+                                    </TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </div>
@@ -249,7 +275,7 @@ export default function Reports() {
                         <div className="form-group">
                             <label className="form-label">Reported Content</label>
                             <div style={{ padding: '1rem', background: '#f1f5f9', borderRadius: '0.5rem' }}>
-                                "{selectedReport.target}"
+                                "{selectedReport.targetContent}"
                             </div>
                         </div>
                         <div className="form-group">
@@ -258,11 +284,11 @@ export default function Reports() {
                         </div>
 
                         <div className="form-actions">
-                            <Button variant="ghost" onClick={() => handleAction(selectedReport.id, 'dismiss')}>
+                            <Button variant="ghost" onClick={() => handleAction(selectedReport._id, 'dismiss')}>
                                 <XCircle size={18} style={{ marginRight: '8px' }} />
                                 Dismiss Report
                             </Button>
-                            <Button variant="danger" onClick={() => handleAction(selectedReport.id, 'ban')}>
+                            <Button variant="danger" onClick={() => handleAction(selectedReport._id, 'ban')}>
                                 <AlertTriangle size={18} style={{ marginRight: '8px' }} />
                                 Take Action (Ban/Delete)
                             </Button>

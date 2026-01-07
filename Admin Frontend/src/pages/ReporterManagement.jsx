@@ -1,29 +1,46 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import { Eye, Check, X, FileText } from 'lucide-react';
-
-const MOCK_REPORTERS = [
-    { id: 1, name: 'Sarah Connor', email: 'sarah@news.com', status: 'Pending', bio: 'Experienced local news reporter.', articles: 0, applied: '2025-12-28' },
-    { id: 2, name: 'John Doe', email: 'john@news.com', status: 'Approved', bio: 'Tech enthusiast covering gadgets.', articles: 12, applied: '2025-11-10' },
-    { id: 3, name: 'Emily Clarke', email: 'emily@news.com', status: 'Rejected', bio: 'Blogger turned reporter.', articles: 0, applied: '2025-12-01' },
-];
+import { getReportersAPI, updateUserStatusAPI } from '../services/userApi';
 
 export default function ReporterManagement() {
-    const [reporters, setReporters] = useState(MOCK_REPORTERS);
+    const [reporters, setReporters] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selectedReporter, setSelectedReporter] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    useEffect(() => {
+        fetchReporters();
+    }, []);
+
+    const fetchReporters = async () => {
+        try {
+            setLoading(true);
+            const res = await getReportersAPI();
+            setReporters(res.data);
+        } catch (error) {
+            console.error("Fetch Reporters Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleOpenModal = (reporter) => {
         setSelectedReporter(reporter);
         setIsModalOpen(true);
     };
 
-    const updateStatus = (id, newStatus) => {
-        setReporters(reporters.map(r => r.id === id ? { ...r, status: newStatus } : r));
-        setIsModalOpen(false);
+    const updateStatus = async (id, newStatus) => {
+        try {
+            await updateUserStatusAPI(id, newStatus);
+            fetchReporters();
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error("Update Status Error:", error);
+        }
     };
 
     const getStatusColor = (status) => {
@@ -53,14 +70,14 @@ export default function ReporterManagement() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {reporters.map((reporter) => (
-                        <TableRow key={reporter.id}>
+                    {reporters.length > 0 ? reporters.map((reporter) => (
+                        <TableRow key={reporter._id}>
                             <TableCell>
-                                <div style={{ fontWeight: 500 }}>{reporter.name}</div>
+                                <div style={{ fontWeight: 500 }}>{reporter.fullName}</div>
                                 <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{reporter.email}</div>
                             </TableCell>
-                            <TableCell>{reporter.applied}</TableCell>
-                            <TableCell>{reporter.articles}</TableCell>
+                            <TableCell>{new Date(reporter.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>{reporter.articlesCount || 0}</TableCell>
                             <TableCell>
                                 <Badge variant={getStatusColor(reporter.status)}>{reporter.status}</Badge>
                             </TableCell>
@@ -70,7 +87,13 @@ export default function ReporterManagement() {
                                 </Button>
                             </TableCell>
                         </TableRow>
-                    ))}
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
+                                {loading ? 'Loading...' : 'No reporters found.'}
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
             </Table>
 
@@ -86,10 +109,10 @@ export default function ReporterManagement() {
                                 width: '60px', height: '60px', borderRadius: '50%',
                                 background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
                             }}>
-                                {selectedReporter.name.charAt(0)}
+                                {selectedReporter.fullName?.charAt(0) || '?'}
                             </div>
                             <div>
-                                <h3 style={{ margin: 0 }}>{selectedReporter.name}</h3>
+                                <h3 style={{ margin: 0 }}>{selectedReporter.fullName}</h3>
                                 <p style={{ color: '#64748b', margin: 0 }}>{selectedReporter.email}</p>
                                 <Badge variant={getStatusColor(selectedReporter.status)} className="mt-2">
                                     {selectedReporter.status}
@@ -100,42 +123,31 @@ export default function ReporterManagement() {
                         <div className="form-group">
                             <label className="form-label">Bio / Experience</label>
                             <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}>
-                                {selectedReporter.bio}
+                                {selectedReporter.bio || "No bio provided."}
                             </div>
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Submitted Sample Articles</label>
+                            <label className="form-label">Submitted Documents</label>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <Button variant="ghost" size="sm" asChild>
-                                    <a href="https://example.com/aadhar.pdf" target="_blank">
-                                        <FileText size={16} /> Aadhar Card
-                                    </a>
+                                <Button variant="ghost" size="sm" disabled>
+                                    <FileText size={16} /> ID Proof
                                 </Button>
-
-                                <Button variant="ghost" size="sm" asChild>
-                                    <a href="https://example.com/pan.pdf" target="_blank">
-                                        <FileText size={16} /> Pan Card
-                                    </a>
-                                </Button>
-
                             </div>
                         </div>
 
                         <div className="form-actions">
                             {selectedReporter.status === 'Pending' && (
                                 <>
-                                    <Button variant="danger" onClick={() => updateStatus(selectedReporter.id, 'Rejected')}>
+                                    <Button variant="danger" onClick={() => updateStatus(selectedReporter._id, 'Rejected')}>
                                         <X size={18} /> Reject
                                     </Button>
-                                    <Button variant="primary" onClick={() => updateStatus(selectedReporter.id, 'Approved')}>
+                                    <Button variant="primary" onClick={() => updateStatus(selectedReporter._id, 'Active')}>
                                         <Check size={18} /> Approve Reporter
                                     </Button>
                                 </>
                             )}
-                            {selectedReporter.status !== 'Pending' && (
-                                <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Close</Button>
-                            )}
+                            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Close</Button>
                         </div>
                     </div>
                 )}
